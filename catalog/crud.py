@@ -3,18 +3,11 @@ from sqlalchemy.orm import Session
 from catalog import schemas
 
 from catalog.db import models
+from catalog.db.models import PackagingType
 
 
 def get_all_cheese_types(db: Session):
     return db.query(models.DBCheeseType).all()
-
-
-def get_cheese_type(db: Session, cheese_type_id: int):
-    return (
-        db.query(models.DBCheeseType)
-        .filter(models.DBCheeseType.id == cheese_type_id)
-        .first()
-    )
 
 
 def get_cheese_type_by_name(db: Session, name: str):
@@ -33,8 +26,26 @@ def create_cheese_type(db: Session, cheese_type: schemas.CheeseTypeCreate):
     return db_cheese_type
 
 
-def get_cheese_list(db: Session):
-    return db.query(models.DBCheese).all()
+def get_cheese_list(
+    db: Session,
+    packaging_type: PackagingType | None = None,
+    cheese_type: str | None = None,
+):
+    queryset = db.query(models.DBCheese)
+
+    if packaging_type is not None:
+        queryset = queryset.filter(
+            models.DBCheese.packaging_type == packaging_type.value
+        )
+
+    if cheese_type is not None:
+        queryset = queryset.filter(models.DBCheese.cheese_type.has(name=cheese_type))
+
+    return queryset.all()
+
+
+def get_cheese(db: Session, cheese_id: int):
+    return db.query(models.DBCheese).filter(models.DBCheese.id == cheese_id).first()
 
 
 def create_cheese(db: Session, cheese: schemas.CheeseCreate):
